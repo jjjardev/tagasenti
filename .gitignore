@@ -1,0 +1,18 @@
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.env
+.vscode/
+.idea/
+.DS_Store
+*.log
+
+# Dataset (hosted on Hugging Face, not tracked in repo)
+tagasenti_dataset.csv
+
+# HF dataset card (published separately on HF Hub)
+HFREADME.md
+
+# Colab notebook (personal copy)
+training_pipeline.ipynb
