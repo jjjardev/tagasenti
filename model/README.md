@@ -40,85 +40,83 @@ model-index:
 
 # tagasenti_model
 
-**TagaSenti — Tagalog/Taglish sentiment analysis** fine-tuned from `xlm-roberta-large` (355M) on [jjjardev/tagasenti](https://huggingface.co/datasets/jjjardev/tagasenti) (35,686 sentences, deduplicated to ~34,945 for training).
+Fine-tuned **XLM-RoBERTa-large** (355M) for **Tagalog / Taglish 3-class sentiment** (Negative / Neutral / Positive).
 
-- **3 classes:** `Negative (0)` / `Neutral (1)` / `Positive (2)`
-- **Test:** 86.6% accuracy, macro-F1 **0.866** (stratified 80/10/10, seed 42, deduplicated before split)
-- **Zero-shot HiliSenti (Hiligaynon):** 62.4% acc, F1 0.624
-- **License:** Apache 2.0 (weights), CC BY-SA 4.0 (dataset), MIT (code)
+Trained on [jjjardev/tagasenti](https://huggingface.co/datasets/jjjardev/tagasenti) — 35,686 sentences (deduplicated to ~34,945) across e-commerce, news, social and 9,378 adversarial examples. Held-out test: **86.6% accuracy**, **macro-F1 0.866** (stratified 80/10/10, seed 42). Zero-shot on Hiligaynon (HiliSenti): 62.4% accuracy.
 
-## Intended use
+**Base model:** `xlm-roberta-large` · **Labels:** `0=Negative`, `1=Neutral`, `2=Positive` · **Max length:** 128 · **License:** Apache 2.0 (weights), CC BY-SA 4.0 (dataset)
 
-Classify Tagalog or Taglish (code-switched) sentences. Works out-of-domain for news/social/e-commerce. Not tuned for other Philippine languages (use zero-shot with caution). No PII scrubbing in training data — apply your own NER if needed.
+## Download
 
-## Usage
+**Hugging Face Hub:** https://huggingface.co/jjjardev/tagasenti_model
+
+### Option 1 — `transformers` (recommended)
 
 ```python
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
-import torch
 
-hf_id = "jjjardev/tagasenti_model"
-tok = AutoTokenizer.from_pretrained(hf_id)
-model = AutoModelForSequenceClassification.from_pretrained(hf_id)
+model_id = "jjjardev/tagasenti_model"
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+model = AutoModelForSequenceClassification.from_pretrained(model_id)
+```
+
+### Option 2 — Pipeline (one-liner)
+
+```python
+from transformers import pipeline
+
+clf = pipeline("text-classification", model="jjjardev/tagasenti_model")
+clf("Ang ganda ng quality ng tela, worth it ang price!")  # -> {'label': 'Positive', 'score': 0.96}
+clf("Wala pa ring update ang order ko.")                   # -> {'label': 'Negative', 'score': 0.88}
+```
+
+### Option 3 — `huggingface_hub` CLI / Git
+
+```bash
+# CLI download to local folder
+pip install -U huggingface_hub
+huggingface-cli download jjjardev/tagasenti_model --local-dir ./tagasenti_model
+
+# or clone with Git LFS
+git lfs install
+git clone https://huggingface.co/jjjardev/tagasenti_model
+```
+
+> Requires `transformers>=4.40`, `torch>=2.2`, `huggingface_hub>=0.22`. No extra tokenizer install needed.
+
+## Quick inference
+
+```python
+import torch
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+
+tok = AutoTokenizer.from_pretrained("jjjardev/tagasenti_model")
+model = AutoModelForSequenceClassification.from_pretrained("jjjardev/tagasenti_model")
 model.eval()
+
+labels = ["Negative", "Neutral", "Positive"]
 
 def predict(texts):
     enc = tok(texts, padding=True, truncation=True, max_length=128, return_tensors="pt")
     with torch.no_grad():
         probs = torch.softmax(model(**enc).logits, dim=-1)
-    labels = ["Negative", "Neutral", "Positive"]
     for t, p in zip(texts, probs):
-        pred = p.argmax().item()
-        print(f"{t} -> {labels[pred]} ({p[pred]:.2%})")
+        print(f"{t} -> {labels[p.argmax()]} ({p.max():.2%})")
 
-predict(["Ang ganda ng quality ng tela, worth it ang price!", "Wala pa ring update ang order ko."])
-# Ang ganda ... -> Positive (96.2%)
-# Wala pa ... -> Negative (88.1%)
+predict(["Ang ganda ng tela!", "Hindi maganda, sayang pera."])
 ```
 
-CLI:
-
-```bash
-pip install -r requirements.txt  # or pip install -e .
-python scripts/inference.py "Ang ganda ng tela!" --hf-id jjjardev/tagasenti_model
-python scripts/inference.py --file sentences.txt --json
-```
-
-## Training
-
-See `scripts/train/TagaSenti.py` — full pipeline:
-
-- Unicode NFKC, laughter canonicalization (`hahaha`), `word2`/`abot-abot` expansion, slang (`wla→wala`, `dko→di ko`, …), char dedup, whitespace collapse — **casing preserved** (XLM-R cased).
-- Deduplication (exact sentence, keep first) before split to avoid leakage (~741 dupes, 113 conflicts).
-- Dynamic max length p99 capped at 128.
-- Weighted CE + label smoothing 0.10, cosine schedule with warmup (2e-5 → 1e-6), AdamW fused, grad checkpointing, FP16, early stopping (patience 3, metric f1_macro).
-
-```bash
-pip install -r requirements.txt
-python scripts/train/TagaSenti.py          # outputs to models/tagasenti_model
-python scripts/upload_model.py --local models/tagasenti_model --repo jjjardev/tagasenti_model --dry-run
-python scripts/upload_model.py --local models/tagasenti_model --repo jjjardev/tagasenti_model
-```
-
-## Evaluation
-
-- **Test set:** held-out stratified split (see dataset card). Confusion matrix saved as `final_test_confusion_matrix.png`.
-- **Cross-lingual:** `jjjardev/hilisenti-v1` test set zero-shot (no fine-tuning) — 62.4% acc.
-- Limitations: single seed (no variance), LLM-labeled subsets (NewsPH, TikTok) not human-validated, translation artifacts in Amazon subset, adversarial bias.
+More examples and training script: https://github.com/jjjardev/tagasenti
 
 ## Citation
 
 ```bibtex
 @misc{jessie_james_jarder_2026,
-  author       = {Jessie James Jarder},
-  title        = {tagasenti (Revision 3ebda33)},
-  year         = 2026,
-  url          = {https://huggingface.co/datasets/jjjardev/tagasenti},
-  doi          = {10.57967/hf/9620},
-  publisher    = {Hugging Face}
+  author = {Jessie James Jarder},
+  title  = {tagasenti (Revision 3ebda33)},
+  year   = {2026},
+  url    = {https://huggingface.co/datasets/jjjardev/tagasenti},
+  doi    = {10.57967/hf/9620},
+  publisher = {Hugging Face}
 }
 ```
-
-## Contact
-
-Issues: https://github.com/jjjardev/tagasenti — PRs welcome.
