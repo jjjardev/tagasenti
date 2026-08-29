@@ -14,11 +14,11 @@ A multi‑domain sentiment analysis dataset and model for **Tagalog and Taglish*
 
 ## Model
 
-**[jjjardev/tagasenti_model](https://huggingface.co/jjjardev/tagasenti_model)** on Hugging Face
+**[jjjardev/tagasenti_model](https://huggingface.co/jjjardev/tagasenti_model)** on Hugging Face — **v6 release** (matches dataset v6 35,686)
 
 - Fine‑tuned `xlm-roberta-large` (355M parameters)
-- **86.6% test F1 / 86.6% accuracy** — **v4 production checkpoint** (32,179 rows, `v3 28,766 + 3,413 “no-keywords”`, val peak 0.878 at step 3200) — HiliSenti zero-shot **F1 0.624** (+3.3, Pos +5.8). Dataset on Hub is v6 (35,686) which retrains to ~0.848 F1; v5.1 (34,287) is best *saved* checkpoint (0.856, `load_best_model_at_end` success) — see [`paper_notes/COMPLETE_DOCUMENTATION.md`](paper_notes/COMPLETE_DOCUMENTATION.md) §5–6.
-- Adversarial 100-set ceiling: **83%** (v4/v5.1, idioms 8/17 errors remain — template generation cannot teach non-compositional semantics)
+- **84.8% test F1 / 84.8% accuracy** — **v6 final checkpoint** (35,686 rows: `v5.1 34,287 + 1,399 selective`, 3 epochs, val 0.863 at step 2400) — HiliSenti zero-shot **F1 0.586**, adversarial 100-set ~83%. Released for dataset-version alignment (Neu hedging bias fixed, 0.9% error). Project-best remains v4 (32,179 rows, 0.866 test / 0.624 Hili, val peak 0.878 unsaved) and v5.1 best saved (0.856) — see [`paper_notes/COMPLETE_DOCUMENTATION.md`](paper_notes/COMPLETE_DOCUMENTATION.md) §5–6.
+- Adversarial ceiling: **83%** (idioms 8/17 errors remain across v4/v5.1/v6 — template generation cannot teach non-compositional semantics)
 - Apache 2.0 — local staging: [`model/`](model/) — ready to `huggingface-cli upload`
 
 ## Training Script

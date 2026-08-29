@@ -29,6 +29,11 @@ filisenti/
 # Keep locally for context; do not commit. Distilled into README/HFREADME/model/README.
 paper_notes/
 
+# HF Hub model card drafts — do not commit to GitHub (upload directly to HF Hub)
+HF_MODEL_CARD*.md
+*_HF_card.md
+*_model_HF_card.md
+
 # Model weights & checkpoints (too large for git - hosted on HF Hub)
 # Keep the directory + placeholder README, ignore actual weights
 models/*
