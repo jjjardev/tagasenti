@@ -43,11 +43,13 @@ from transformers import (
 # ============================================================
 CFG = {
     "hf_repo":        "jjjardev/tagasenti",
-    "output_dir":     "models/v6",
+    "hf_model_id":    "jjjardev/tagasenti_model",  # HF model repo (already exists)
+    "output_dir":     "models/tagasenti_model",
     "model_ckpt":     "xlm-roberta-large",
     "test_size":      0.20,
     "val_from_held":  0.50,
     "seed":           42,
+    "deduplicate":    True,   # drop exact sentence duplicates (keep first); logs conflicts
     "max_len_percentile": 99,
     "max_len_cap":         128,
     "max_len_sample":      2_000,
@@ -88,6 +90,37 @@ def clean_labels(df: pd.DataFrame) -> pd.DataFrame:
     return df[df["label"].isin([0, 1, 2])].reset_index(drop=True)
 
 
+def deduplicate(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Drop exact duplicate sentences (keep first occurrence).
+    - Logs how many were removed and how many had conflicting labels.
+    - Does NOT normalize text before dedup (exact match only); normalization
+      happens later and may collapse additional near-duplicates — that's
+      intentional and logged via the training script's histogram probe.
+    - If a `domain` or `source` column exists, adversarial-only-train filtering
+      should be done *before* this call (kept for backward compat).
+    """
+    if not CFG.get("deduplicate", True):
+        return df
+    dup_mask = df.duplicated(subset=["sentence"], keep=False)
+    if not dup_mask.any():
+        print("Deduplication: no exact duplicates found.")
+        return df
+    dup_groups = df[dup_mask].groupby("sentence")
+    conflict_groups = sum(1 for _, g in dup_groups if g["label"].nunique() > 1)
+    exact_dup_rows = int(df.duplicated(subset=["sentence"], keep="first").sum())
+    print(
+        f"Deduplication: {exact_dup_rows} exact duplicate rows found "
+        f"across {dup_groups.ngroups} unique sentences "
+        f"({conflict_groups} with conflicting labels — keeping first label)."
+    )
+    # Keep first occurrence per sentence
+    deduped = df.drop_duplicates(subset=["sentence"], keep="first").reset_index(drop=True)
+    print(f"After dedup: {len(deduped)} rows (removed {len(df) - len(deduped)})")
+    print(f"Label distribution (post-dedup):\n{deduped['label'].value_counts().sort_index()}\n")
+    return deduped
+
+
 print(f"Loading dataset from HuggingFace Hub: {CFG['hf_repo']}")
 features = Features({"sentence": Value("string"), "label": Value("string")})
 ds = load_dataset(CFG["hf_repo"], split="train", features=features)
@@ -95,7 +128,17 @@ df = clean_labels(pd.DataFrame(ds))
 print(f"Loaded {len(df)} rows")
 print(f"Label distribution:\n{df['label'].value_counts().sort_index()}\n")
 
-# Stratified 80 / 10 / 10 split
+# Deduplicate before splitting to avoid train/val/test leakage
+df = deduplicate(df)
+
+# Stratified 80 / 10 / 10 split on the *full* dataset (including adversarial).
+# NOTE: Earlier dataset cards described adversarial as "train-only" — that applied
+# to the offline v1-v4 curated splits stored locally. The HF Hub distribution
+# `jjjardev/tagasenti` is a single `train` split with all domains mixed; this
+# script therefore does a reproducible stratified random split for training.
+# To reproduce a strict adversarial-only-train setup, filter by a `domain`
+# column before this split (if present) or use the frozen `tagasenti_dataset.csv`
+# splits from the GitHub release.
 train_df, temp_df = train_test_split(
     df, test_size=CFG["test_size"], stratify=df["label"], random_state=CFG["seed"]
 )

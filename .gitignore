@@ -1,7 +1,12 @@
 __pycache__/
 *.pyc
 *.pyo
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 venv/
+.venv/
 .env
 .vscode/
 .idea/
@@ -11,11 +16,40 @@ venv/
 # Dataset (hosted on Hugging Face, not tracked in repo)
 tagasenti_dataset.csv
 
-# HF dataset card (published separately on HF Hub)
-HFREADME.md
+# HF dataset card — source is HFREADME.md (tracked), mirrored to Hub via `huggingface-cli upload`
+# (previously ignored; now tracked for version control — Hub is source of truth for dataset page)
 
-# Colab notebook (personal copy)
+# Colab notebook (personal copy - thin wrapper, see scripts/train/)
 training_pipeline.ipynb
 
 # FiliSenti project (separate repo, not part of TagaSenti)
 filisenti/
+
+# Model weights & checkpoints (too large for git - hosted on HF Hub)
+# Keep the directory + placeholder README, ignore actual weights
+models/*
+!models/.gitkeep
+!models/README.md
+*.safetensors
+*.bin
+*.onnx
+*.h5
+*.ckpt
+*.pt
+# Allow model card (HF Hub staging) but ignore weights inside model/
+!model/
+!model/README.md
+model/*.safetensors
+model/*.bin
+model/*.onnx
+model/*.pt
+
+# Training artifacts
+wandb/
+runs/
+lightning_logs/
+tensorboard_logs/
+.cache/
+*.png
+!examples/*.png
+confusion_matrices/

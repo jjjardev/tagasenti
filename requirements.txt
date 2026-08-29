@@ -1,12 +1,21 @@
-flask>=3.0
-transformers>=4.40
-torch>=2.0
+# Core - training & inference
+torch>=2.2,<3.0
+transformers>=4.40,<5.0
+datasets>=2.14
+accelerate>=0.27
 numpy>=1.24
 pandas>=2.0
 scikit-learn>=1.3
+# Tokenization is via transformers (no extra dep)
+
+# Evaluation & viz (optional but used in train script)
 matplotlib>=3.7
 seaborn>=0.12
-datasets>=2.14
-requests>=2.31
-google-generativeai>=0.3
-# google-colab  # only needed when running in Colab
+
+# Hub upload & progress
+huggingface-hub>=0.22
+tqdm>=4.65
+
+# --- Optional / dev ---
+# flask>=3.0          # only for examples/app.py demo, uncomment if needed
+# google-generativeai>=0.3  # only for synthetic data generation, not training
