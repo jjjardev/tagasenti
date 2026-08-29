@@ -30,11 +30,11 @@ language_creators:
 size_categories:
 - 10K<n<100K
 source_datasets:
-- uhhlt/fires
-- davidjm/sentitaglish
-- amazon_polarity
-- NewsPH
-- tiktok_hate_speech
+- ccosme/FiReCS
+- ccosme/SentiTaglishProductsAndServices
+- fancyzhx/amazon_polarity
+- jcblaise/newsph
+- imperialite/filipino-tiktok-hatespeech
 task_ids:
 - multi-class-classification
 ---

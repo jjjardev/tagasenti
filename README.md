@@ -6,21 +6,20 @@ A multi‑domain sentiment analysis dataset and model for **Tagalog and Taglish*
 
 **[jjjardev/tagasenti](https://huggingface.co/datasets/jjjardev/tagasenti)** on Hugging Face — DOI `10.57967/hf/9620`
 
-- 35,686 sentences across 5 domains (e‑commerce, news, social media, adversarial, synthetic)
-- 3 classes: Negative (0), Neutral (1), Positive (2)
-- 9,378 targeted adversarial rows over 4 generations for robust edge-case handling
+- **35,686 sentences** (final v6: `v5.1 34,287 + 1,399 selective`) across 3 base domains + adversarial — deduplicated to ~34,945 for training
+- 3 classes: Negative (0), Neutral (1), Positive (2) — perfectly balanced at v1 (33/33/33), 37/33/30 at v6
+- ~10k targeted adversarial rows over 4 generations (`v3 3,766 + v4 3,413 + v5 2,417 + v6 1,399`) for sarcasm/negation/idiom robustness
 - Tagalog / Taglish code‑switching
-- CC BY‑SA 4.0
+- CC BY‑SA 4.0 — see [`paper_notes/COMPLETE_DOCUMENTATION.md`](paper_notes/COMPLETE_DOCUMENTATION.md) (private, 9-day log) distilled here
 
 ## Model
 
 **[jjjardev/tagasenti_model](https://huggingface.co/jjjardev/tagasenti_model)** on Hugging Face
 
 - Fine‑tuned `xlm-roberta-large` (355M parameters)
-- **86.6%** test accuracy, macro‑F1 **0.866** (deduplicated, stratified 80/10/10, seed 42)
-- Cross-lingual zero-shot on HiliSenti (Hiligaynon): **62.4%** accuracy, F1 **0.624**
-- Apache 2.0
-- Local staging: [`model/`](model/) — ready to `huggingface-cli upload`
+- **86.6% test F1 / 86.6% accuracy** — **v4 production checkpoint** (32,179 rows, `v3 28,766 + 3,413 “no-keywords”`, val peak 0.878 at step 3200) — HiliSenti zero-shot **F1 0.624** (+3.3, Pos +5.8). Dataset on Hub is v6 (35,686) which retrains to ~0.848 F1; v5.1 (34,287) is best *saved* checkpoint (0.856, `load_best_model_at_end` success) — see [`paper_notes/COMPLETE_DOCUMENTATION.md`](paper_notes/COMPLETE_DOCUMENTATION.md) §5–6.
+- Adversarial 100-set ceiling: **83%** (v4/v5.1, idioms 8/17 errors remain — template generation cannot teach non-compositional semantics)
+- Apache 2.0 — local staging: [`model/`](model/) — ready to `huggingface-cli upload`
 
 ## Training Script
 

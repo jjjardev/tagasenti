@@ -25,6 +25,10 @@ training_pipeline.ipynb
 # FiliSenti project (separate repo, not part of TagaSenti)
 filisenti/
 
+# Paper notes — private research logs (9 days, v1–v6), not for public Hub
+# Keep locally for context; do not commit. Distilled into README/HFREADME/model/README.
+paper_notes/
+
 # Model weights & checkpoints (too large for git - hosted on HF Hub)
 # Keep the directory + placeholder README, ignore actual weights
 models/*

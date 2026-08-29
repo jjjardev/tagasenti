@@ -42,9 +42,9 @@ model-index:
 
 Fine-tuned **XLM-RoBERTa-large** (355M) for **Tagalog / Taglish 3-class sentiment** (Negative / Neutral / Positive).
 
-Trained on [jjjardev/tagasenti](https://huggingface.co/datasets/jjjardev/tagasenti) — 35,686 sentences (deduplicated to ~34,945) across e-commerce, news, social and 9,378 adversarial examples. Held-out test: **86.6% accuracy**, **macro-F1 0.866** (stratified 80/10/10, seed 42). Zero-shot on Hiligaynon (HiliSenti): 62.4% accuracy.
+Trained on [jjjardev/tagasenti](https://huggingface.co/datasets/jjjardev/tagasenti) — final dataset **v6 35,686 rows** (deduplicated to ~34,945) across 3 base domains + 4 adversarial generations. **Weights are v4 production checkpoint** (32,179 rows: `v3 28,766 + 3,413 “no-keywords”`): held-out test **86.6% accuracy / macro-F1 0.866** (stratified 80/10/10, seed 42, val peak 0.878 at step 3200). Zero-shot HiliSenti (Hiligaynon): **62.4%** — best cross-lingual (+5.8 Pos via “no-keywords”).
 
-**Base model:** `xlm-roberta-large` · **Labels:** `0=Negative`, `1=Neutral`, `2=Positive` · **Max length:** 128 · **License:** Apache 2.0 (weights), CC BY-SA 4.0 (dataset)
+**Base model:** `xlm-roberta-large` · **Labels:** `0=Negative`, `1=Neutral`, `2=Positive` · **Max length:** 71–72 (p99, cap 128), 128 for inference · **License:** Apache 2.0 (weights), CC BY-SA 4.0 (dataset) · **Versions:** v6 dataset 35,686 (0.848 F1 if retrained), v5.1 best *saved* checkpoint 0.856, **v4 0.866 production** — see repo `paper_notes/COMPLETE_DOCUMENTATION.md` §5–6. Adversarial ceiling 83% (idioms 8/17 errors remain).
 
 ## Download
 
