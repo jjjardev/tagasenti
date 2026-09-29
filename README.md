@@ -88,6 +88,7 @@ print(["Negative", "Neutral", "Positive"][logits.argmax().item()])
 ├── scripts/
 │   ├── train/TagaSenti.py      # Training pipeline
 │   ├── quantize_tagasenti_colab.py  # ONNX INT8 quantization (Colab T4 cell, HF Hub source)
+│   ├── use_tagasenti_int8_colab.py  # INT8 verification + inference (Colab cell, no torch)
 │   ├── validate_dataset.py     # Duplicate / integrity checks
 │   ├── inference.py            # HF model inference demo
 │   └── upload_model.py         # Stage & upload to jjjardev/tagasenti_model
