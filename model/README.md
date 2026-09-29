@@ -3,9 +3,7 @@ language:
   - tl
   - en
 license: apache-2.0
-library_name:
-  - transformers
-  - onnx
+library_name: transformers
 pipeline_tag: text-classification
 tags:
   - sentiment-analysis
@@ -15,6 +13,7 @@ tags:
   - code-switching
   - xlm-roberta
   - low-resource
+  - onnx
 base_model: xlm-roberta-large
 datasets:
   - jjjardev/tagasenti
