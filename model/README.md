@@ -3,7 +3,9 @@ language:
   - tl
   - en
 license: apache-2.0
-library_name: transformers
+library_name:
+  - transformers
+  - onnx
 pipeline_tag: text-classification
 tags:
   - sentiment-analysis
@@ -46,6 +48,8 @@ Trained on [jjjardev/tagasenti](https://huggingface.co/datasets/jjjardev/tagasen
 
 **Base model:** `xlm-roberta-large` · **Labels:** `0=Negative`, `1=Neutral`, `2=Positive` · **Max length:** p99 71–72 (cap 128), 128 for inference · **License:** Apache 2.0 (weights), CC BY-SA 4.0 (dataset) · **Note:** v4 holds project-best test 0.866 / Hili 0.624 (val peak 0.878, unsaved), v5.1 best *saved* checkpoint 0.856 — **v6 released for dataset-version alignment** and hedging-bias fix (Neu prediction error 0.9% vs v4 3 err). See `paper_notes/COMPLETE_DOCUMENTATION.md` §5–6. Adversarial ceiling 83% (idioms 8/17 remain).
 
+A quantized **INT8 ONNX** version (`tagasenti_int8.onnx`, ~537 MB, opset 18, dynamic INT8 `per_channel=True`) is included in this repo for CPU-only / on-device use with no PyTorch — see Option 4 below.
+
 ## Download
 
 **Hugging Face Hub:** https://huggingface.co/jjjardev/tagasenti_model
@@ -81,6 +85,28 @@ huggingface-cli download jjjardev/tagasenti_model --local-dir ./tagasenti_model
 git lfs install
 git clone https://huggingface.co/jjjardev/tagasenti_model
 ```
+
+### Option 4 — ONNX INT8 (CPU-only, no torch)
+
+```python
+import numpy as np
+import onnxruntime as ort
+from transformers import AutoTokenizer
+
+tokenizer = AutoTokenizer.from_pretrained("jjjardev/tagasenti_model")
+session = ort.InferenceSession("tagasenti_int8.onnx", providers=["CPUExecutionProvider"])
+
+labels = ["Negative", "Neutral", "Positive"]
+inputs = tokenizer("Ang ganda ng quality ng tela, worth it ang price!",
+                   return_tensors="np", truncation=True, max_length=128)
+logits = session.run(["logits"], {
+    "input_ids": inputs["input_ids"].astype(np.int64),
+    "attention_mask": inputs["attention_mask"].astype(np.int64),
+})[0]
+print(labels[logits.argmax().item()])  # Positive
+```
+
+Direct download: `https://huggingface.co/jjjardev/tagasenti_model/resolve/main/tagasenti_int8.onnx` · **Spec:** inputs `input_ids` + `attention_mask` (int64, dynamic `[batch, seq_len]`), output `logits` (float32 `[batch, 3]`). Exported from the v6 weights via FP32 ONNX (opset 18, dynamic batch/sequence) + INT8 dynamic quantization (`QuantType.QInt8`, `per_channel=True`, single file). Spot-checked on 4 Tagalog sentences (Positive / Negative / Neutral + sarcasm) — all 4 labels match FP32.
 
 > Requires `transformers>=4.40`, `torch>=2.2`, `huggingface_hub>=0.22`. No extra tokenizer install needed.
 

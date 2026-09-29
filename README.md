@@ -20,6 +20,7 @@ A multi‑domain sentiment analysis dataset and model for **Tagalog and Taglish*
 - **84.8% test F1 / 84.8% accuracy** — **v6 final checkpoint** (35,686 rows: `v5.1 34,287 + 1,399 selective`, 3 epochs, val 0.863 at step 2400) — HiliSenti zero-shot **F1 0.586**, adversarial 100-set ~83%. Released for dataset-version alignment (Neu hedging bias fixed, 0.9% error). Project-best remains v4 (32,179 rows, 0.866 test / 0.624 Hili, val peak 0.878 unsaved) and v5.1 best saved (0.856) — see [`paper_notes/COMPLETE_DOCUMENTATION.md`](paper_notes/COMPLETE_DOCUMENTATION.md) §5–6.
 - Adversarial ceiling: **83%** (idioms 8/17 errors remain across v4/v5.1/v6 — template generation cannot teach non-compositional semantics)
 - Apache 2.0 — local staging: [`model/`](model/) — ready to `huggingface-cli upload`
+- **INT8 ONNX for on-device/CPU**: [`tagasenti_int8.onnx`](https://huggingface.co/jjjardev/tagasenti_model/resolve/main/tagasenti_int8.onnx) (~537 MB, opset 18, dynamic INT8 `per_channel=True`) hosted in the same model repo — no torch needed, see Option 4 in the [model card](model/README.md). Quantize it yourself with [`scripts/quantize_tagasenti_colab.py`](scripts/quantize_tagasenti_colab.py) (Colab T4 cell, pulls straight from HF Hub).
 
 ## Training Script
 
@@ -47,6 +48,31 @@ python scripts/validate_dataset.py    # checks duplicates / label conflicts
 python scripts/inference.py "Ang ganda ng tela!"  # quick HF model inference
 ```
 
+### Quantize to ONNX INT8 (Colab)
+
+```bash
+# Paste scripts/quantize_tagasenti_colab.py into one Colab (T4) cell and run.
+# Pulls jjjardev/tagasenti_model from Hub → exports FP32 ONNX → INT8
+# (isolated subprocess, T4-safe) → tagasenti_int8.onnx + tokenizer.
+# Then: huggingface-cli upload jjjardev/tagasenti_model tagasenti_int8.onnx
+```
+
+### Use the INT8 model (no torch)
+
+```python
+import numpy as np, onnxruntime as ort
+from transformers import AutoTokenizer
+
+tokenizer = AutoTokenizer.from_pretrained("jjjardev/tagasenti_model")
+session = ort.InferenceSession("tagasenti_int8.onnx", providers=["CPUExecutionProvider"])
+inputs = tokenizer("Ang ganda ng tela!", return_tensors="np", truncation=True, max_length=128)
+logits = session.run(["logits"], {
+    "input_ids": inputs["input_ids"].astype(np.int64),
+    "attention_mask": inputs["attention_mask"].astype(np.int64),
+})[0]
+print(["Negative", "Neutral", "Positive"][logits.argmax().item()])
+```
+
 ### Requirements
 
 - Python 3.10+
@@ -61,6 +87,7 @@ python scripts/inference.py "Ang ganda ng tela!"  # quick HF model inference
 ├── pyproject.toml
 ├── scripts/
 │   ├── train/TagaSenti.py      # Training pipeline
+│   ├── quantize_tagasenti_colab.py  # ONNX INT8 quantization (Colab T4 cell, HF Hub source)
 │   ├── validate_dataset.py     # Duplicate / integrity checks
 │   ├── inference.py            # HF model inference demo
 │   └── upload_model.py         # Stage & upload to jjjardev/tagasenti_model
